@@ -1,13 +1,16 @@
 package main
 
+type AliasName struct {
+	Name string `@Ident`
+}
 type AsAlias struct {
-	Alias string `("AS")? @Ident`
+	Alias *AliasName `"AS"? @@`
 }
 
 type TableInfo struct {
-	TableName string  `@Ident`
-	AsAlias   AsAlias `(@@)?`
-	Timestamp string  `("FOR SYSTEM_TIME AS OF" @Ident)?`
+	TableExpression *Value  `@@`
+	AsAlias         AsAlias `@@?`
+	Timestamp       string  `("FOR" "SYSTEM_TIME" "AS" "OF" @Ident)?`
 }
 
 type AliasableQueryExpression struct {
@@ -16,8 +19,9 @@ type AliasableQueryExpression struct {
 }
 
 type FromItem struct {
-	TableInfo                *TableInfo                `( @@`
-	JoinOperation            []*JoinOperation          `| ( @@ | "(" @@ ")" )`
+	TableInfo *TableInfo `( @@`
+	// JoinOperation            []*JoinOperation          `| ( @@ | "(" @@ ")" )`
+	JoinOperation            *JoinOperation            `| @@`
 	AliasableQueryExpression *AliasableQueryExpression `| @@`
 	FieldPath                *Value                    `| @@ )`
 	// UnnestOperator  UnnestOperator  `| @@ `
@@ -25,8 +29,5 @@ type FromItem struct {
 }
 
 type FromStatement struct {
-	FromItem *FromItem `@@`
-	// PivotOperator       PivotOperator       `( @@`
-	// UnpivotOperator     UnpivotOperator     `| @@)?`
-	// TableSampleOperator TableSampleOperator `( @@ )?`
+	FromItems []*FromItem `"FROM" @@ ( "," @@ )*`
 }

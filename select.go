@@ -5,28 +5,41 @@ type TypeCast struct {
 }
 
 type Column struct {
-	Name string `@Ident`
+	Name *Name `@@`
 }
 
 type SelectReplace struct {
-	OldColumnName string `@Ident ("AS")?`
-	NewColumName  string `@Ident`
+	// OldColumnName *Expression `@@?`
+	// NewColumName  *Expression `AsAlias?`
+	OldColumnName *Value   `@@?`
+	NewColumName  *AsAlias `@@?`
 }
 
-type GenericSelectExpression struct {
-	Select        string           `(@Ident".")? @"*"`
-	ExceptColumns []*Column        `("EXCEPT" "(" @@ ("," @@)* ")")?`
-	Replace       []*SelectReplace `("REPLACE" "(" @@ ("," @@)* ")")?`
+type ExceptStatement struct {
+	ExceptColumns []*Column `"EXCEPT" "(" @@ ("," @@)* ")"`
 }
 
-type AliasedSelectExpression struct {
-	Expression *Value `@@`
-	Alias      *Value `( "AS"? @@ )?`
+type ReplaceStatement struct {
+	Replaces []*SelectReplace `"REPLACE" "(" @@ ("," @@)* ")"`
+}
+
+type FirstFormSelectExpression struct {
+	// Select        string           `(@Ident ".")? @"*"`
+	// ExceptColumns []*Column        `("EXCEPT" "(" @@ ("," @@)* ")")?`
+	// Replace       []*SelectReplace `("REPLACE" "(" @@ ("," @@)* ")")?`
+	Expression *Value            `@@? "."? "*"`
+	Except     *ExceptStatement  `@@?`
+	Replace    *ReplaceStatement `@@?`
+}
+
+type SecondFormSelectExpression struct {
+	Expression *Value   `@@`
+	Alias      *AsAlias `@@?`
 }
 
 type RepeatableSelectExpression struct {
-	GenericSelectExpression *GenericSelectExpression `@@`
-	AliasedSelectExpression *AliasedSelectExpression `| @@`
+	FirstFormSelectExpression  *FirstFormSelectExpression  `@@`
+	SecondFormSelectExpression *SecondFormSelectExpression `| @@`
 }
 
 // type SelectExpression struct {
@@ -42,7 +55,7 @@ type SelectStatement struct {
 	TypeCast                   *TypeCast                     `"SELECT" @@?`
 	Selection                  string                        `( @"ALL" | @"DISTINCT" )?`
 	RepeatableSelectExpression []*RepeatableSelectExpression `@@ ( "," @@ )*`
-	// From             []*FromStatement `("FROM" @@ ("," @@ )* )?`
+	From                       []*FromStatement              `@@?`
 	// Where            string             `("WHERE" @Ident)?`
 	// GroupBy          *GroupByExpression `("GROUP BY" @@ )?`
 	// Having           string             `("HAVING" @Ident)?`

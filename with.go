@@ -1,7 +1,7 @@
 package main
 
 type CTE struct {
-	Name            string          `@Ident "AS" `
+	Name            *Value          `@@ "AS" `
 	QueryExpression QueryExpression `"(" @@ ")"`
 }
 

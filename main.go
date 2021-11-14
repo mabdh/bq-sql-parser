@@ -8,10 +8,6 @@ import (
 	"github.com/alecthomas/repr"
 )
 
-// type Expression struct {
-// 	Exp string `@Ident`
-// }
-
 // type ReplaceExpression struct {
 // 	Expression  Expression   `@@ ("AS")?`
 // 	ColumnNames []Expression `@@+`
@@ -49,27 +45,76 @@ type WindowClause struct {
 }
 
 type OrderByItem struct {
-	Name       string `@Ident`
-	Ascending  bool   `(@"ASC"`
-	Descending bool   `|@"DESC")?`
+	// Expression *Expression `@@`
+	Expression *Value `@@`
+	OrderType  string `(@"ASC" |@"DESC")?`
 }
 
-type OrderByStatement struct {
-	OrderBy []OrderByItem `("ORDER BY" @@ ("," @@)*)?`
+type OrderClause struct {
+	OrderBy []OrderByItem `"ORDER" "BY" @@ ("," @@)*`
 }
 
-type LimitStatement struct {
-	Count    int `("LIMIT" @Ident`
-	SkipRows int `("OFFSET" @Ident)?)?`
+type Count struct {
+	Number *Number `@@`
+}
+
+type SkipRows struct {
+	Number *Number `@@`
+}
+
+type LimitClause struct {
+	Count    *Value `"LIMIT" @@`
+	SkipRows *Value `("OFFSET" @@)?`
+}
+
+type FirstFormQueryExpression struct {
+	SelectStatement     *SelectStatement `@@`
+	SetOperation        *SetOperation    `@@?`
+	QueryExpressionPost *QueryExpression `@@?`
+	OrderByStatement    *OrderClause     `@@?`
+	LimitStatement      *LimitClause     `@@?`
+}
+
+type SecondFormQueryExpression struct {
+	QueryExpression     *QueryExpression `"(" @@ ")"`
+	SetOperation        *SetOperation    `@@?`
+	QueryExpressionPost *QueryExpression `@@?`
+	OrderByStatement    *OrderClause     `@@?`
+	LimitStatement      *LimitClause     `@@?`
+}
+
+type SetOperation struct {
+	Operator string `( @"UNION" ( @"ALL" | @"DISTINCT" )? | @"INTERSECT DISTINCT" | @"EXCEPT DISTINCT" )`
+}
+
+type ThirdFormQueryExpression struct {
+	QueryExpressionPre  *QueryExpression `@@`
+	SetOperation        *SetOperation    `@@`
+	QueryExpressionPost *QueryExpression `@@`
+	OrderByStatement    *OrderClause     `@@?`
+	LimitStatement      *LimitClause     `@@?`
 }
 
 type QueryExpression struct {
-	SelectStatement *SelectStatement `( @@`
-	QueryExpression *QueryExpression `| "(" @@ ")"`
-	SetOperation    *SetOperation    `| @@ )`
+	FirstFormQueryExpression  *FirstFormQueryExpression  `( @@`
+	SecondFormQueryExpression *SecondFormQueryExpression `| @@ )`
+	// ThirdFormQueryExpression  *ThirdFormQueryExpression  `| @@ )`
+	// SelectStatement           *SelectStatement `( @@`
+	// QueryExpression           *QueryExpression `| "(" @@ ")"`
+	// SetOperation              *SetOperation    `| @@ )`
 	// OrderByStatement *OrderByStatement `@@`
 	// LimitStatement   *LimitStatement   `@@`
 }
+
+// type QueryExpression struct {
+// 	QueryExpressionPre  *QueryExpression `(@@`
+// 	SetOperation        *SetOperation    ` @@`
+// 	QueryExpressionPost *QueryExpression ` @@ `
+// 	SelectStatement     *SelectStatement `| @@`
+// 	QueryExpression     *QueryExpression `| "(" @@ ")" )`
+// 	OrderByStatement    *OrderClause     `@@?`
+// 	LimitStatement      *LimitClause     `@@?`
+// }
 
 // QueryStatement is a root
 type QueryStatement struct {
@@ -122,6 +167,7 @@ func main() {
 	SELECT 'Buchanan', 50, 13)
 	SELECT * FROM PlayerStats
 	`
+
 	err := parser.ParseString("", sqlString, sql)
 	repr.Println(sql, repr.Indent("  "), repr.OmitEmpty(true))
 	fmt.Println(err)

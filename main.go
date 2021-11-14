@@ -8,26 +8,26 @@ import (
 	"github.com/alecthomas/repr"
 )
 
-type Expression struct {
-	Exp string `@Ident`
-}
+// type Expression struct {
+// 	Exp string `@Ident`
+// }
 
-type ReplaceExpression struct {
-	Expression  Expression   `@@ ("AS")?`
-	ColumnNames []Expression `@@+`
-}
+// type ReplaceExpression struct {
+// 	Expression  Expression   `@@ ("AS")?`
+// 	ColumnNames []Expression `@@+`
+// }
 
-type AliasExpression struct {
-	Expression Expression `@@ `
-	Alias      string     `( ( "AS" )? @Ident )?`
-}
+// type AliasExpression struct {
+// 	Expression Expression `@@ `
+// 	Alias      string     `( ( "AS" )? @Ident )?`
+// }
 
-type InternalSelectExpression struct {
-	Expression        Expression         `( (@@".")? "*"`
-	ExceptColumnNames []string           `("EXCEPT" "(" @Ident+ ")")?`
-	Replace           *ReplaceExpression `("REPLACE" "(" @@ ")")?`
-	Alias             *AliasExpression   `| @@ )`
-}
+// type InternalSelectExpression struct {
+// 	Expression        Expression         `( (@@".")? "*"`
+// 	ExceptColumnNames []string           `("EXCEPT" "(" @Ident+ ")")?`
+// 	Replace           *ReplaceExpression `("REPLACE" "(" @@ ")")?`
+// 	Alias             *AliasExpression   `| @@ )`
+// }
 
 type Group struct {
 	Name string `@Ident`
@@ -48,21 +48,6 @@ type WindowClause struct {
 	WindowSpecification string `| "(" ( @Ident )? ")")`
 }
 
-type CTE struct {
-	Name            string          `@Ident "AS" `
-	QueryExpression QueryExpression `"(" @@ ")"`
-}
-
-type WithStatement struct {
-	CTE []*CTE `("WITH" @@ ("," @@)*)?`
-}
-
-type SelectQuerySetOperation struct {
-	SelectStatement *SelectStatement `@@`
-	QueryExpression *QueryExpression `| "(" @@ ")"`
-	SetOperation    *SetOperation    `| @@`
-}
-
 type OrderByItem struct {
 	Name       string `@Ident`
 	Ascending  bool   `(@"ASC"`
@@ -79,15 +64,34 @@ type LimitStatement struct {
 }
 
 type QueryExpression struct {
-	WithStatement           *WithStatement           `@@`
-	SelectQuerySetOperation *SelectQuerySetOperation `@@`
+	SelectStatement *SelectStatement `( @@`
+	QueryExpression *QueryExpression `| "(" @@ ")"`
+	SetOperation    *SetOperation    `| @@ )`
 	// OrderByStatement *OrderByStatement `@@`
 	// LimitStatement   *LimitStatement   `@@`
 }
 
 // QueryStatement is a root
 type QueryStatement struct {
+	Tokens          []lexer.Token
+	WithStatement   *WithStatement   `@@?`
 	QueryExpression *QueryExpression `@@`
+}
+
+type Value struct {
+	Wildcard   bool     `(  @"*"`
+	Number     *float64 ` | @Number`
+	Identifier string   ` | @Ident`
+	String     *string  ` | @String`
+	Boolean    *Boolean ` | @("TRUE" | "FALSE")`
+	Null       bool     ` | @"NULL" )`
+}
+
+type Boolean bool
+
+func (b *Boolean) Capture(values []string) error {
+	*b = values[0] == "TRUE"
+	return nil
 }
 
 var sqlLexer = lexer.Must(lexer.NewSimple([]lexer.Rule{
@@ -96,20 +100,27 @@ var sqlLexer = lexer.Must(lexer.NewSimple([]lexer.Rule{
 	{`Number`, `[-+]?\d*\.?\d+([eE][-+]?\d+)?`, nil},
 	{`String`, `'[^']*'|"[^"]*"`, nil},
 	{`Operators`, `<>|!=|<=|>=|[-+*/%,.()=<>]`, nil},
+	{"Punct", `,`, nil},
 	{"whitespace", `\s+`, nil},
 }))
 
 var parser = participle.MustBuild(
 	&QueryStatement{},
 	participle.Lexer(sqlLexer),
-	participle.Unquote("String"))
+	participle.Unquote("String"),
+	participle.CaseInsensitive("Keyword"))
 
-// participle.CaseInsensitive("Keyword"),
 func main() {
 
 	sql := &QueryStatement{}
 	sqlString := `
-	SELECT Adams as LastName, 50 as SchoolID FROM Roster
+	WITH PlayerStats AS
+	(SELECT 'Adams' as LastName, 51 as OpponentID, 3 as PointsScored UNION ALL
+	SELECT 'Buchanan', 77, 0 UNION ALL
+	SELECT 'Coolidge', 77, 1 UNION ALL
+	SELECT 'Adams', 52, 4 UNION ALL
+	SELECT 'Buchanan', 50, 13)
+	SELECT * FROM PlayerStats
 	`
 	err := parser.ParseString("", sqlString, sql)
 	repr.Println(sql, repr.Indent("  "), repr.OmitEmpty(true))

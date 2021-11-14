@@ -9,8 +9,8 @@ type ConditionJoinOperator struct {
 }
 
 type JoinCondition struct {
-	OnClause    string       `("ON" @Ident`
-	UsingClause []Expression `| "USING" "(" @@ ("," @@)* ")")`
+	OnClause string `("ON" @Ident)`
+	// UsingClause []Expression `| "USING" "(" @@ ("," @@)* ")")`
 }
 
 type ConditionJoinOperation struct {

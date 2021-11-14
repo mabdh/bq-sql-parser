@@ -12,14 +12,14 @@ type TableInfo struct {
 
 type AliasableQueryExpression struct {
 	QueryExpression *QueryExpression `"(" @@ ")"`
-	AsAlias         AsAlias          `(@@)?`
+	AsAlias         AsAlias          ` @@?`
 }
 
 type FromItem struct {
-	TableInfo                *TableInfo                `(@@`
+	TableInfo                *TableInfo                `( @@`
 	JoinOperation            []*JoinOperation          `| ( @@ | "(" @@ ")" )`
-	AliasableQueryExpression *AliasableQueryExpression `| "(" @@  ")"`
-	FieldPath                string                    `| @Ident )`
+	AliasableQueryExpression *AliasableQueryExpression `| @@`
+	FieldPath                *Value                    `| @@ )`
 	// UnnestOperator  UnnestOperator  `| @@ `
 	// CTEAlias AsAlias `@@?`
 }

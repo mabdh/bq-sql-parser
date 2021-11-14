@@ -1,7 +1,7 @@
 package main
 
 type SetOperator struct {
-	Operator string `"UNION" ( "ALL" | "DISTINCT" ) | "INTERSECT DISTINCT" | "EXCEPT DISTINCT"`
+	Operator *Value `@@`
 }
 
 // Operator *Value `"UNION" ( "ALL" | "DISTINCT" ) | "INTERSECT DISTINCT" | "EXCEPT DISTINCT"`

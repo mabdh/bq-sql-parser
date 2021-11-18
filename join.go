@@ -35,16 +35,16 @@ type JoinName struct {
 }
 
 type JoinType struct {
-	Type string `@"INNER" | @"CROSS" | @"FULL OUTER"? | @"LEFT OUTER"? | @"RIGHT OUTER"?`
+	Type string `( @"INNER" | @"CROSS" | @"FULL OUTER"? | @"LEFT OUTER"? | @"RIGHT OUTER"? )`
 }
 
 type OnClause struct {
 	// BoolExpression *BoolExpression `"ON" @@`
-	Clause *Value `@@`
+	Clause *Value `"ON" @@`
 }
 
 type UsingClause struct {
-	JoinNames []*JoinName `"USING" "(" @@ ("," @@)* ")"`
+	JoinNames []*JoinName `"USING" "(" @@ ("," @@ )* ")"`
 }
 
 type JoinOperation struct {

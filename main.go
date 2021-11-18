@@ -54,10 +54,6 @@ type OrderClause struct {
 	OrderBy []OrderByItem `"ORDER" "BY" @@ ("," @@)*`
 }
 
-type Count struct {
-	Number *Number `@@`
-}
-
 type SkipRows struct {
 	Number *Number `@@`
 }
@@ -87,23 +83,22 @@ type SetOperation struct {
 	Operator string `( @"UNION" ( @"ALL" | @"DISTINCT" )? | @"INTERSECT DISTINCT" | @"EXCEPT DISTINCT" )`
 }
 
-type ThirdFormQueryExpression struct {
-	QueryExpressionPre  *QueryExpression `@@`
-	SetOperation        *SetOperation    `@@`
-	QueryExpressionPost *QueryExpression `@@`
-	OrderByStatement    *OrderClause     `@@?`
-	LimitStatement      *LimitClause     `@@?`
-}
+// type QueryExpression struct {
+// 	SelectStatement     *SelectStatement `( @@`
+// 	QueryExpressionPre  *QueryExpression `| "(" @@ ")" )`
+// 	SetOperation        *SetOperation    `@@?`
+// 	QueryExpressionPost *QueryExpression `@@?`
+// 	OrderByStatement    *OrderClause     `@@?`
+// 	LimitStatement      *LimitClause     `@@?`
+// }
 
 type QueryExpression struct {
-	FirstFormQueryExpression  *FirstFormQueryExpression  `( @@`
-	SecondFormQueryExpression *SecondFormQueryExpression `| @@ )`
-	// ThirdFormQueryExpression  *ThirdFormQueryExpression  `| @@ )`
-	// SelectStatement           *SelectStatement `( @@`
-	// QueryExpression           *QueryExpression `| "(" @@ ")"`
-	// SetOperation              *SetOperation    `| @@ )`
-	// OrderByStatement *OrderByStatement `@@`
-	// LimitStatement   *LimitStatement   `@@`
+	SelectStatement     *SelectStatement `( @@`
+	QueryExpressionPre  *QueryExpression `| "(" @@ ")" )`
+	SetOperation        *SetOperation    `@@?`
+	QueryExpressionPost *QueryExpression `@@?`
+	OrderByStatement    *OrderClause     `@@?`
+	LimitStatement      *LimitClause     `@@?`
 }
 
 // type QueryExpression struct {
@@ -119,8 +114,8 @@ type QueryExpression struct {
 // QueryStatement is a root
 type QueryStatement struct {
 	Tokens          []lexer.Token
-	WithStatement   *WithStatement   `@@?`
-	QueryExpression *QueryExpression `@@`
+	WithStatement   *WithStatement   `@@? ";"?`
+	QueryExpression *QueryExpression `@@ ";"?`
 }
 
 type Value struct {
@@ -153,20 +148,23 @@ var parser = participle.MustBuild(
 	&QueryStatement{},
 	participle.Lexer(sqlLexer),
 	participle.Unquote("String"),
-	participle.CaseInsensitive("Keyword"))
+	participle.CaseInsensitive("Keyword"),
+	participle.UseLookahead(2))
 
 func main() {
 
 	sql := &QueryStatement{}
-	sqlString := `
-	WITH PlayerStats AS
-	(SELECT 'Adams' as LastName, 51 as OpponentID, 3 as PointsScored UNION ALL
-	SELECT 'Buchanan', 77, 0 UNION ALL
-	SELECT 'Coolidge', 77, 1 UNION ALL
-	SELECT 'Adams', 52, 4 UNION ALL
-	SELECT 'Buchanan', 50, 13)
-	SELECT * FROM PlayerStats
-	`
+	// sqlString := `
+	// WITH PlayerStats AS
+	// (SELECT 'Adams' as LastName, 51 as OpponentID, 3 as PointsScored UNION ALL
+	// SELECT 'Buchanan', 77, 0 UNION ALL
+	// SELECT 'Coolidge', 77, 1 UNION ALL
+	// SELECT 'Adams', 52, 4 UNION ALL
+	// SELECT 'Buchanan', 50, 13)
+	// SELECT * FROM PlayerStats
+	// `
+
+	sqlString := `SELECT * FROM (SELECT "apple" AS fruit, "carrot" AS vegetable);`
 
 	err := parser.ParseString("", sqlString, sql)
 	repr.Println(sql, repr.Indent("  "), repr.OmitEmpty(true))

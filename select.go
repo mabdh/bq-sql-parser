@@ -55,10 +55,10 @@ type SelectStatement struct {
 	TypeCast                   *TypeCast                     `"SELECT" @@?`
 	Selection                  string                        `( @"ALL" | @"DISTINCT" )?`
 	RepeatableSelectExpression []*RepeatableSelectExpression `@@ ( "," @@ )*`
-	From                       []*FromStatement              `@@?`
-	// Where            string             `("WHERE" @Ident)?`
-	// GroupBy          *GroupByExpression `("GROUP BY" @@ )?`
-	// Having           string             `("HAVING" @Ident)?`
-	// Qualify          string             `("QUALIFY" @Ident)?`
-	// Window           string             `("WINDOW" @Ident)?`
+	From                       *FromStatement                `@@?`
+	Where                      string                        `("WHERE" @Ident)?`
+	GroupBy                    *GroupByExpression            `("GROUP" "BY" @@ )?`
+	Having                     string                        `("HAVING" @Ident)?`
+	Qualify                    string                        `("QUALIFY" @Ident)?`
+	Window                     string                        `("WINDOW" @Ident)?`
 }

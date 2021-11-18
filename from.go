@@ -21,8 +21,8 @@ type AliasableQueryExpression struct {
 type FromItem struct {
 	TableInfo *TableInfo `( @@`
 	// JoinOperation            []*JoinOperation          `| ( @@ | "(" @@ ")" )`
-	JoinOperation            *JoinOperation            `| @@`
 	AliasableQueryExpression *AliasableQueryExpression `| @@`
+	JoinOperation            *JoinOperation            `| @@`
 	FieldPath                *Value                    `| @@ )`
 	// UnnestOperator  UnnestOperator  `| @@ `
 	// CTEAlias AsAlias `@@?`
